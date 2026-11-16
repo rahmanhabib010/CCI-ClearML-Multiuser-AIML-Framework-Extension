@@ -1,0 +1,10 @@
+{
+  "apiserver/server.py": {
+    "original_sha256": "4995e2fe4a99088c30e6f49a409b79f74e46730723dc180812f8e5c0cc6f53c3",
+    "patched_sha256": "6a169b5a9bf91c33fa598b941686fea1b0f6d887e219a5e485eebeba62090e7d"
+  },
+  "apiserver/sso_authentik.py": {
+    "original_sha256": null,
+    "patched_sha256": "8bea029bb4b9f4cf61f0a6ba15d11cc58000cf52d0137d2ca5dfd5cdc9a5bddd"
+  }
+}

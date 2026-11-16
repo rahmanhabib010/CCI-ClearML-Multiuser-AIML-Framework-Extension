@@ -1,0 +1,7 @@
+button {
+  &.hideBackground {
+    background: none !important;
+    border: none !important;
+    transition: color 0.3s;
+  }
+}

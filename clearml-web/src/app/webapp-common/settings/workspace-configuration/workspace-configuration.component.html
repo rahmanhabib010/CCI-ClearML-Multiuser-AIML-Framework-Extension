@@ -1,0 +1,6 @@
+<section class="workspace">
+  <sm-user-data [userId]="currentUser()?.id"></sm-user-data>
+  @if (canManageApiCredentials()) {
+    <sm-user-credentials [canManageCredentials]="canManageApiCredentials()"></sm-user-credentials>
+  }
+</section>

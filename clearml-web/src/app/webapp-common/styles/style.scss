@@ -1,0 +1,146 @@
+@use '@angular/material' as mat;
+
+@use "sass:meta";
+@forward "../assets/fonts/trains-icons.scss";
+@forward "reboot";
+@forward "minimal-bootstrap";
+@forward "layout";
+@forward "utilities";
+@forward "customizations";
+@forward "icons"; //needs a clean from sass vars
+@forward "../angular-notifier/styles/core";
+@forward "../angular-notifier/styles/types/type-default";
+@forward "../angular-notifier/styles/themes/theme-material.scss";
+@forward "notifications";
+@forward "printing";
+@use "themes";
+@use "customizations";
+
+@media (prefers-color-scheme: dark) {
+  html {
+    background-color: var(--color-shadow);
+  }
+}
+
+:root {
+  @include mat.all-component-themes(themes.$theme);
+  @include mat.system-level-colors(themes.$theme);
+  @include customizations.components(themes.$theme);
+
+  &.dark-mode {
+    @include mat.all-component-colors(themes.$dark-theme);
+    @include mat.system-level-colors(themes.$dark-theme);
+    @include customizations.components(themes.$dark-theme);
+  }
+}
+
+@include meta.load-css("src/app/shared/custom-styles");
+
+// The credential selector is a MatDialog ng-template. Material renders it in an
+// overlay outside the owning component, so these styles must be global.
+.clearml-credential-selection-panel {
+  .mat-mdc-dialog-surface {
+    border-radius: 22px !important;
+    box-shadow: 0 24px 64px rgba(18, 37, 65, 0.22);
+  }
+
+  .credential-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+    padding: 38px 48px 34px;
+    color: var(--color-on-surface);
+    font-family: Heebo, Arial, sans-serif;
+  }
+
+  .credential-dialog-symbol {
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 122, 190, 0.1);
+    color: #0077b8;
+    font-size: 21px;
+  }
+
+  .credential-dialog-title {
+    margin: 0;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: #0572b9;
+  }
+
+  .credential-dialog-description {
+    margin: 0 0 5px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-on-surface-variant);
+  }
+
+  .credential-dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+
+    input, select {
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+      min-height: 44px;
+      padding: 9px 13px;
+      border: 1px solid var(--color-outline-variant, #c8ccd8);
+      border-radius: 6px;
+      background: var(--color-surface, #fff);
+      color: var(--color-on-surface, #20242c);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 400;
+
+      &:focus-visible {
+        outline: 2px solid #087cbe;
+        outline-offset: 1px;
+      }
+    }
+  }
+
+  .dialog-note {
+    margin: 0;
+    color: var(--color-on-surface-variant);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .credential-error {
+    color: #b3261e;
+    font-size: 13px;
+  }
+
+  .credential-dialog-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    padding-top: 17px;
+    border-top: 1px solid var(--color-outline-variant, #e0e3ea);
+  }
+
+  .credential-submit {
+    border-radius: 22px !important;
+    background-color: #087cbe !important;
+    color: #fff !important;
+    padding: 0 23px !important;
+
+    &[disabled] { opacity: 0.45; }
+  }
+
+  @media (max-width: 600px) {
+    .credential-dialog-body { padding: 28px 22px 24px; }
+    .credential-dialog-title { font-size: 21px; }
+  }
+}

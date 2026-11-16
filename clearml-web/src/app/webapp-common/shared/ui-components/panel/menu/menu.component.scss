@@ -1,0 +1,30 @@
+:host {
+  .menu-button,
+  .menu-button &:hover,
+  .menu-button &:focus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    min-width: 36px;
+  }
+
+  .hidden-button {
+    opacity: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .disabled-menu-btn {
+    pointer-events: none;
+    cursor: initial;
+  }
+
+  &.selected {
+    mat-icon {
+      --mat-icon-color: var(--row-selected-text-color);
+    }
+  }
+
+}

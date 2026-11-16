@@ -1,0 +1,46 @@
+:host {
+  width: 190px;
+  text-align: center;
+
+  input {
+    text-align: center;
+    width: 22px;
+    border: none;
+    font-size: 14px;
+    background: transparent;
+    &:last-of-type {
+      width: 30px;
+    }
+  }
+
+  .inputs-container {
+    background: var(--color-surface-container-high);
+    padding: 0 12px;
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    gap: 1px;
+
+    .separator {
+      line-height: 32px;
+
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+
+    .submit {
+      position: absolute;
+      top: 50%;
+      right: -8px;
+      transform: translate(0, -50%);
+      opacity: 0;
+      transition: right ease-in-out 0.3s, opacity ease-out 0.5s;
+
+      &.in-edit-mode {
+        right: -34px;
+        opacity: 1;
+      }
+    }
+  }
+}

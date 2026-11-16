@@ -1,0 +1,53 @@
+# ============================================
+# ClearML CCI Multiuser AI/ML Framework
+# ============================================
+
+# Confidential environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Authentication and credential files
+**/credentials.json
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+**/secrets/
+
+# Local development backups
+*.backup
+*.bak
+*.before-*
+*.orig
+*.rej
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node.js and Angular generated files
+node_modules/
+dist/
+.angular/
+coverage/
+.cache/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Editor-specific files
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
