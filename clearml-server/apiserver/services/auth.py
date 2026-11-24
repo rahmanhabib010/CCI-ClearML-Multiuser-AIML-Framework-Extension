@@ -1,5 +1,9 @@
 import re
 import secrets
+import os
+from urllib.parse import urlparse
+
+from flask import request as flask_request
 
 from apiserver.apierrors import errors
 from apiserver.apimodels.auth import (
@@ -293,6 +297,128 @@ def _admin_target_user(call: APICall, user_id: str) -> User:
     ):
         raise errors.bad_request.InvalidUserId("Target must be a lab user or worker")
     return user
+
+
+
+# Self-service credentials are deliberately separate from admin credential creation.
+# The browser session is mandatory: SDK API keys cannot mint new SDK API keys.
+def _self_service_credential_user(call: APICall):
+    origin = flask_request.headers.get("Origin", "").rstrip("/")
+    configured_origins = os.environ.get(
+        "CLEARML_SELF_SERVICE_ALLOWED_ORIGINS", "https://clearml.ccixgtestbed.org"
+    )
+    allowed_origins = {
+        value.strip().rstrip("/") for value in configured_origins.split(",") if value.strip()
+    }
+    if not origin or origin not in allowed_origins:
+        raise errors.forbidden.RoleNotAllowed("Request must originate from an allowed WebApp")
+
+    cookie_token = flask_request.cookies.get("clearml_token_basic")
+    if not cookie_token:
+        raise errors.forbidden.RoleNotAllowed("An authenticated browser session is required")
+    try:
+        browser_token = Token.from_encoded_token(cookie_token)
+        if is_token_revoked(browser_token):
+            raise ValueError("Revoked session")
+        session_identity = browser_token.identity
+        if (session_identity.user != call.identity.user or
+                session_identity.company != call.identity.company):
+            raise ValueError("Session identity mismatch")
+    except Exception:
+        raise errors.forbidden.RoleNotAllowed("Invalid or expired browser session")
+
+    user = User.objects(id=call.identity.user, company=call.identity.company,
+                        role=Role.user).first()
+    if (user is None or user.is_worker_service or
+            _is_protected_user(call.identity.user) or
+            _is_fixed_credentials_admin(call)):
+        raise errors.forbidden.RoleNotAllowed("Account is not eligible for self-service credentials")
+
+    # SSO eligibility is grounded in the existing immutable issuer+subject link;
+    # a matching email address or untrusted browser claim is insufficient.
+    from apiserver.sso_identity import SSOIdentityLink
+    linked_sso = SSOIdentityLink.objects(user_id=user.id, company=user.company).first()
+    fixed_allowed = {
+        value.strip() for value in
+        os.environ.get("CLEARML_SELF_SERVICE_FIXED_USER_IDS", "").split(",")
+        if value.strip()
+    }
+    if linked_sso is None and user.id not in fixed_allowed:
+        raise errors.forbidden.RoleNotAllowed(
+            "No trusted SSO identity mapping or explicitly allowed lab account"
+        )
+    return user
+
+
+@endpoint("auth.self_service_credential_status")
+def self_service_credential_status(call: APICall, *_, **__):
+    """Browser-only: report whether user can request one credential pair."""
+    user = _self_service_credential_user(call)
+    call.result.data = {
+        "eligible": True,
+        "has_credentials": bool(user.credentials),
+    }
+
+
+@endpoint("auth.my_credentials")
+def my_credentials(call: APICall, *_, **__):
+    """List only the current eligible browser user's own credential metadata."""
+    user = _self_service_credential_user(call)
+    call.result.data = {
+        "credentials": [
+            {
+                "access_key": c.key,
+                "label": c.label or "",
+                "last_used": c.last_used.isoformat() if c.last_used else None,
+            }
+            for c in user.credentials
+        ]
+    }
+
+
+@endpoint("auth.revoke_my_credentials")
+def revoke_my_credentials(call: APICall, *_, **__):
+    """Browser-only self-revocation; user ID cannot be submitted by the caller."""
+    user = _self_service_credential_user(call)
+    access_key = call.data.get("access_key")
+    if not isinstance(access_key, str) or not access_key:
+        raise errors.bad_request.InvalidAccessKey("Missing access key")
+    with translate_errors_context():
+        revoked = User.objects(
+            id=user.id,
+            company=user.company,
+            role=Role.user,
+            credentials__key=access_key,
+        ).update_one(pull__credentials__key=access_key)
+    if not revoked:
+        raise errors.bad_request.InvalidAccessKey("Credential not found in your account")
+    call.result.data = {"revoked": bool(revoked)}
+
+
+@endpoint("auth.request_my_credentials")
+def request_my_credentials(call: APICall, *_, **__):
+    """Issue one key pair to the verified browser-session user, never to a caller-supplied ID."""
+    user = _self_service_credential_user(call)
+    # Fail closed if credentials already exist; the admin can revoke old keys.
+    # This check is not a database-level concurrency lock: rate-limit requests
+    # at the proxy and use an atomic issuance lock for high-concurrency deployments.
+    if user.credentials:
+        raise errors.forbidden.RoleNotAllowed(
+            "Credentials already exist. Contact your administrator for rotation."
+        )
+    credential = AuthBLL.create_credentials(
+        user_id=user.id,
+        company_id=user.company,
+        role=user.role,
+        label="self-service SDK",
+    )
+    call.result.data = {
+        "credentials": {
+            "access_key": credential.access_key,
+            "secret_key": credential.secret_key,
+            "label": credential.label,
+        }
+    }
 
 
 @endpoint("auth.admin_credential_targets")

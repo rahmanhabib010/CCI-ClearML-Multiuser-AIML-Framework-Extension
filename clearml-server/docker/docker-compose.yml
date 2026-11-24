@@ -47,6 +47,9 @@ services:
       CLEARML_SSO_ADMIN_ISSUER: "${CLEARML_SSO_ADMIN_ISSUER:?required}"
       CLEARML_SSO_ADMIN_SUB: "${CLEARML_SSO_ADMIN_SUB:?required}"
 
+      CLEARML_SELF_SERVICE_ALLOWED_ORIGINS: "https://clearml.ccixgtestbed.org"
+      CLEARML_SELF_SERVICE_FIXED_USER_IDS: ""
+
     ports:
     - "8008:8008"
     networks:

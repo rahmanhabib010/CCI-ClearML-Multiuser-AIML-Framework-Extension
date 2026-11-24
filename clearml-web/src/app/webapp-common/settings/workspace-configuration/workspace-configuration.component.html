@@ -1,6 +1,63 @@
 <section class="workspace">
   <sm-user-data [userId]="currentUser()?.id"></sm-user-data>
+
+  @if (eligible() && !canManageApiCredentials()) {
+    <div class="self-service-card">
+      <h3>ClearML SDK Credentials</h3>
+      <p>Generate personal credentials for Local Python or Jupyter Notebook access to the CCI xG Testbed.</p>
+      @if (existingCredentials()) {
+        <p>You already have an active API key. Revoke it below before requesting a replacement.</p>
+      } @else {
+        <button type="button" [disabled]="requesting()" (click)="requestMyCredentials()">
+          {{ requesting() ? 'Verifying identity…' : 'Request API Credentials' }}
+        </button>
+      }
+      <div class="self-service-actions">
+        <button type="button" (click)="loadMyCredentials()">Refresh my credentials</button>
+      </div>
+      <h4>My API Credentials</h4>
+      @if (myCredentials().length > 0) {
+        <table class="self-service-table">
+          <thead><tr><th>Label</th><th>Access Key</th><th>Last Used</th><th>Actions</th></tr></thead>
+          <tbody>
+            @for (credential of myCredentials(); track credential.access_key) {
+              <tr>
+                <td>{{ credential.label || 'API credential' }}</td>
+                <td><code>{{ credential.access_key }}</code></td>
+                <td>{{ credential.last_used ? (credential.last_used | date:'medium') : 'Never' }}</td>
+                <td><button class="self-service-revoke" type="button" [disabled]="!!revokingKey()" (click)="revokeMyCredential(credential.access_key)">{{ revokingKey() === credential.access_key ? 'Revoking...' : 'Revoke' }}</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p>No active API credentials found.</p>
+      }
+      <p class="self-service-hint">Only one active key pair is permitted. Secrets are shown only at creation; revoking a key disconnects any SDK using it.</p>
+      @if (requestError() && !shownCredentials()) { <p class="self-service-error" role="alert">{{ requestError() }}</p> }
+    </div>
+  }
+
   @if (canManageApiCredentials()) {
     <sm-user-credentials [canManageCredentials]="canManageApiCredentials()"></sm-user-credentials>
   }
 </section>
+
+@if (shownCredentials()) {
+  <div class="self-service-dialog-overlay">
+    <div class="self-service-dialog" role="dialog" aria-modal="true" aria-label="Your ClearML API credentials">
+      <button class="self-service-close" type="button" (click)="closeCredentialDialog()" aria-label="Close">✕</button>
+      <h2>Verified! Your API Credentials</h2>
+      <p>Your credentials have been generated for your verified ClearML account.</p>
+      <div class="self-service-tabs" role="tablist" aria-label="Configuration type">
+        <button role="tab" type="button" [attr.aria-selected]="selectedTab() === 'python'" (click)="setTab('python')">LOCAL PYTHON</button>
+        <button role="tab" type="button" [attr.aria-selected]="selectedTab() === 'jupyter'" (click)="setTab('jupyter')">JUPYTER NOTEBOOK</button>
+      </div>
+      <p>{{ selectedTab() === 'python' ? 'Paste into clearml-init or your clearml.conf file.' : 'Run this cell in your Jupyter Notebook before importing ClearML.' }}</p>
+      <pre class="self-service-config"><code>{{ configurationText() }}</code></pre>
+      <button type="button" (click)="copyConfiguration()">Copy configuration</button>
+      @if (requestError()) { <p class="self-service-error" role="alert">{{ requestError() }}</p> }
+      <p class="self-service-notice">Keep your secret key private. This confirmation is shown only when a new key pair is issued.</p>
+    </div>
+  </div>
+}

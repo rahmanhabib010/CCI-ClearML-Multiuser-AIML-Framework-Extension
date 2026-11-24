@@ -71,6 +71,34 @@ export class ApiAuthService {
         );
     }
 
+    /** Browser-session-only personal SDK credential eligibility. */
+    public authSelfServiceCredentialStatus(): Observable<{eligible: boolean; has_credentials: boolean}> {
+        return this.apiRequest.post<{eligible: boolean; has_credentials: boolean}>(
+            `${this.basePath}/auth.self_service_credential_status`, {}, {withCredentials: true}
+        );
+    }
+
+    /** Read credential metadata for only the authenticated browser-session account. */
+    public authMyCredentials(): Observable<{credentials: {access_key: string; label: string; last_used: string | null}[]}> {
+        return this.apiRequest.post<{credentials: {access_key: string; label: string; last_used: string | null}[]}>(
+            `${this.basePath}/auth.my_credentials`, {}, {withCredentials: true}
+        );
+    }
+
+    /** Revoke one key owned by the authenticated browser-session account. */
+    public authRevokeMyCredentials(accessKey: string): Observable<{revoked: boolean}> {
+        return this.apiRequest.post<{revoked: boolean}>(
+            `${this.basePath}/auth.revoke_my_credentials`, {access_key: accessKey}, {withCredentials: true}
+        );
+    }
+
+    /** Issue credentials to the authenticated account only; never accept a user ID. */
+    public authRequestMyCredentials(): Observable<{credentials: {access_key: string; secret_key: string; label: string}}> {
+        return this.apiRequest.post<{credentials: {access_key: string; secret_key: string; label: string}}>(
+            `${this.basePath}/auth.request_my_credentials`, {}, {withCredentials: true}
+        );
+    }
+
     public authAdminCredentialTargets(): Observable<{targets: any[]}> {
         return this.apiRequest.post<{targets: any[]}>(
             `${this.basePath}/auth.admin_credential_targets`, {}, {withCredentials: true}
